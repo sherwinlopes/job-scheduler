@@ -1,5 +1,7 @@
 package com.scheduler.worker;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.scheduler.model.*;
 import com.scheduler.repository.JobExecutionRepository;
 import com.scheduler.repository.JobRepository;
@@ -9,7 +11,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -34,6 +35,11 @@ public class JobWorker {
     private final Counter jobsExecuted;
     private final Counter jobsFailed;
     private final Timer executionTimer;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private final HttpJobExecutor httpExecutor = new HttpJobExecutor();
+    private final ShellJobExecutor shellExecutor = new ShellJobExecutor();
+    private final SimulationJobExecutor simulationExecutor = new SimulationJobExecutor();
 
     public JobWorker(JobRepository jobRepository,
                      JobExecutionRepository executionRepository,
@@ -77,7 +83,8 @@ public class JobWorker {
         executionRepository.save(execution);
 
         try {
-            simulateJobExecution(job);
+            JobExecutor executor = resolveExecutor(job);
+            executor.execute(job);
 
             Instant end = Instant.now();
             execution.setStatus(ExecutionStatus.COMPLETED);
@@ -122,10 +129,21 @@ public class JobWorker {
         jobRepository.save(job);
     }
 
-    private void simulateJobExecution(Job job) throws Exception {
-        Thread.sleep(1000 + (long) (Math.random() * 2000));
-        if (Math.random() < 0.1) {
-            throw new RuntimeException("Simulated failure for job: " + job.getName());
+    private JobExecutor resolveExecutor(Job job) {
+        String payload = job.getPayload();
+        if (payload == null || payload.isBlank()) {
+            return simulationExecutor;
+        }
+        try {
+            JsonNode config = objectMapper.readTree(payload);
+            String type = config.has("type") ? config.get("type").asText() : "";
+            return switch (type.toUpperCase()) {
+                case "HTTP" -> httpExecutor;
+                case "SHELL" -> shellExecutor;
+                default -> simulationExecutor;
+            };
+        } catch (Exception e) {
+            return simulationExecutor;
         }
     }
 }

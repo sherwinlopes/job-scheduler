@@ -7,7 +7,8 @@ function App() {
   const [selectedJob, setSelectedJob] = useState<number | null>(null);
   const [executions, setExecutions] = useState<JobExecution[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newJob, setNewJob] = useState({ name: '', payload: '', cronExpression: '', maxRetries: 3 });
+  const [jobType, setJobType] = useState<'SIMULATION' | 'HTTP' | 'SHELL'>('SIMULATION');
+  const [newJob, setNewJob] = useState({ name: '', cronExpression: '', maxRetries: 3, httpUrl: '', httpMethod: 'POST', httpBody: '', shellCommand: '' });
 
   const refresh = useCallback(async () => {
     const [jobsRes, metricsRes] = await Promise.all([getJobs(), getMetricsSummary()]);
@@ -27,10 +28,22 @@ function App() {
     }
   }, [selectedJob]);
 
+  const buildPayload = (): string => {
+    switch (jobType) {
+      case 'HTTP':
+        return JSON.stringify({ type: 'HTTP', url: newJob.httpUrl, method: newJob.httpMethod, body: newJob.httpBody });
+      case 'SHELL':
+        return JSON.stringify({ type: 'SHELL', command: newJob.shellCommand });
+      default:
+        return '';
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createJob(newJob);
-    setNewJob({ name: '', payload: '', cronExpression: '', maxRetries: 3 });
+    await createJob({ name: newJob.name, cronExpression: newJob.cronExpression, maxRetries: newJob.maxRetries, payload: buildPayload() });
+    setNewJob({ name: '', cronExpression: '', maxRetries: 3, httpUrl: '', httpMethod: 'POST', httpBody: '', shellCommand: '' });
+    setJobType('SIMULATION');
     setShowCreateForm(false);
     refresh();
   };
@@ -74,13 +87,40 @@ function App() {
             <input placeholder="Cron (e.g. 0 */5 * * * *)" value={newJob.cronExpression}
                    onChange={e => setNewJob({...newJob, cronExpression: e.target.value})}
                    style={{ padding: 8, border: '1px solid #ddd', borderRadius: 4 }} required />
-            <input placeholder="Payload (JSON)" value={newJob.payload}
-                   onChange={e => setNewJob({...newJob, payload: e.target.value})}
-                   style={{ padding: 8, border: '1px solid #ddd', borderRadius: 4 }} />
+            <select value={jobType} onChange={e => setJobType(e.target.value as any)}
+                    style={{ padding: 8, border: '1px solid #ddd', borderRadius: 4 }}>
+              <option value="SIMULATION">Simulation</option>
+              <option value="HTTP">HTTP Webhook</option>
+              <option value="SHELL">Shell Command</option>
+            </select>
             <input type="number" placeholder="Max Retries" value={newJob.maxRetries}
                    onChange={e => setNewJob({...newJob, maxRetries: parseInt(e.target.value)})}
                    style={{ padding: 8, border: '1px solid #ddd', borderRadius: 4 }} />
           </div>
+          {jobType === 'HTTP' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 12, marginTop: 12 }}>
+              <input placeholder="URL (https://...)" value={newJob.httpUrl}
+                     onChange={e => setNewJob({...newJob, httpUrl: e.target.value})}
+                     style={{ padding: 8, border: '1px solid #ddd', borderRadius: 4 }} required />
+              <select value={newJob.httpMethod} onChange={e => setNewJob({...newJob, httpMethod: e.target.value})}
+                      style={{ padding: 8, border: '1px solid #ddd', borderRadius: 4 }}>
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+              </select>
+              <input placeholder="Request body (optional)" value={newJob.httpBody}
+                     onChange={e => setNewJob({...newJob, httpBody: e.target.value})}
+                     style={{ padding: 8, border: '1px solid #ddd', borderRadius: 4, gridColumn: '1 / -1' }} />
+            </div>
+          )}
+          {jobType === 'SHELL' && (
+            <div style={{ marginTop: 12 }}>
+              <input placeholder="Shell command (e.g. curl https://...)" value={newJob.shellCommand}
+                     onChange={e => setNewJob({...newJob, shellCommand: e.target.value})}
+                     style={{ padding: 8, border: '1px solid #ddd', borderRadius: 4, width: '100%' }} required />
+            </div>
+          )}
           <button type="submit" style={{ marginTop: 12, padding: '8px 24px', background: '#4caf50', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
             Create
           </button>
