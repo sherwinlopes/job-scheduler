@@ -154,15 +154,15 @@ function App() {
               <td style={{ padding: 8 }}>
                 <div style={{ display: 'flex', gap: 4 }}>
                   {job.status === 'SCHEDULED' && (
-                    <ActionBtn label="Pause" onClick={() => { pauseJob(job.id); refresh(); }} />
+                    <ActionBtn label="Pause" onClick={async () => { await pauseJob(job.id); refresh(); }} />
                   )}
                   {job.status === 'PAUSED' && (
-                    <ActionBtn label="Resume" onClick={() => { resumeJob(job.id); refresh(); }} />
+                    <ActionBtn label="Resume" onClick={async () => { await resumeJob(job.id); refresh(); }} />
                   )}
                   {job.status === 'FAILED' && (
-                    <ActionBtn label="Retry" onClick={() => { retryJob(job.id); refresh(); }} />
+                    <ActionBtn label="Retry" onClick={async () => { await retryJob(job.id); refresh(); }} />
                   )}
-                  <ActionBtn label="Delete" onClick={() => { deleteJob(job.id); refresh(); }} color="#f44336" />
+                  <ActionBtn label="Delete" onClick={async () => { await deleteJob(job.id); refresh(); }} color="#f44336" />
                 </div>
               </td>
             </tr>

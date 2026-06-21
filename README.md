@@ -99,7 +99,19 @@ If `type` is missing or unrecognized, the job runs a 1-3s simulated execution wi
 ### Run backend locally
 ```bash
 cd backend
+# Linux/Mac
 ./mvnw spring-boot:run
+# Windows
+mvnw.cmd spring-boot:run
+```
+
+### Run tests
+```bash
+cd backend
+# Linux/Mac
+./mvnw test
+# Windows
+mvnw.cmd test
 ```
 
 ### Run frontend locally

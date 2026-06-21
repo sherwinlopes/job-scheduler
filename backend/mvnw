@@ -1,0 +1,43 @@
+#!/bin/sh
+# Maven Wrapper script for Unix-based systems
+# Downloads Maven if not present, then runs it
+
+set -e
+
+MAVEN_WRAPPER_JAR=".mvn/wrapper/maven-wrapper.jar"
+MAVEN_WRAPPER_PROPERTIES=".mvn/wrapper/maven-wrapper.properties"
+
+# Find project base dir
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+
+# Read distribution URL
+if [ -f "$MAVEN_WRAPPER_PROPERTIES" ]; then
+    DIST_URL=$(grep 'distributionUrl' "$MAVEN_WRAPPER_PROPERTIES" | cut -d'=' -f2-)
+fi
+
+MAVEN_HOME="$HOME/.m2/wrapper/dists/$(basename "$DIST_URL" .zip)"
+
+if [ ! -d "$MAVEN_HOME" ]; then
+    echo "Downloading Maven from $DIST_URL..."
+    mkdir -p "$HOME/.m2/wrapper/dists"
+    TEMP_FILE="$HOME/.m2/wrapper/dists/maven.zip"
+    if command -v curl > /dev/null 2>&1; then
+        curl -fsSL -o "$TEMP_FILE" "$DIST_URL"
+    elif command -v wget > /dev/null 2>&1; then
+        wget -q -O "$TEMP_FILE" "$DIST_URL"
+    else
+        echo "Error: curl or wget required to download Maven" >&2
+        exit 1
+    fi
+    unzip -q -d "$HOME/.m2/wrapper/dists" "$TEMP_FILE"
+    rm -f "$TEMP_FILE"
+fi
+
+MVN_CMD="$(find "$MAVEN_HOME" -name 'mvn' -path '*/bin/mvn' | head -1)"
+if [ -z "$MVN_CMD" ]; then
+    # Handle nested directory from zip extraction
+    MVN_CMD="$(find "$HOME/.m2/wrapper/dists" -name 'mvn' -path '*/bin/mvn' | head -1)"
+fi
+
+exec "$MVN_CMD" "$@"
