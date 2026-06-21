@@ -27,8 +27,11 @@ public class ShellJobExecutor implements JobExecutor {
                 ? config.get("timeoutSeconds").asLong()
                 : TIMEOUT_SECONDS;
 
-        ProcessBuilder processBuilder = new ProcessBuilder("/bin/sh", "-c", command)
-                .redirectErrorStream(true);
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+        ProcessBuilder processBuilder = isWindows
+                ? new ProcessBuilder("cmd.exe", "/c", command)
+                : new ProcessBuilder("/bin/sh", "-c", command);
+        processBuilder.redirectErrorStream(true);
 
         Process process = processBuilder.start();
 
