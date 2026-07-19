@@ -11,6 +11,21 @@ import java.io.InputStreamReader;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+/**
+ * Executes shell commands from job payloads.
+ *
+ * <p><strong>SECURITY WARNING:</strong> This executor passes user-provided command strings
+ * directly to the system shell ({@code /bin/sh -c} on Unix, {@code cmd.exe /c} on Windows).
+ * Any user who can create a job can execute arbitrary commands on the host.
+ *
+ * <p>In production, consider:
+ * <ul>
+ *   <li>Running workers in isolated containers with minimal privileges</li>
+ *   <li>Maintaining an allowlist of permitted commands</li>
+ *   <li>Restricting job creation to authenticated/authorized users</li>
+ *   <li>Disabling this executor entirely if not needed</li>
+ * </ul>
+ */
 public class ShellJobExecutor implements JobExecutor {
 
     private static final Logger log = LoggerFactory.getLogger(ShellJobExecutor.class);

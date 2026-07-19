@@ -11,7 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/metrics")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "${scheduler.cors.allowed-origins:http://localhost:3000}")
 public class MetricsController {
 
     private final JobRepository jobRepository;
@@ -23,10 +23,10 @@ public class MetricsController {
     @GetMapping("/summary")
     public Map<String, Object> getSummary() {
         long total = jobRepository.count();
-        long scheduled = jobRepository.findByStatus(JobStatus.SCHEDULED).size();
-        long running = jobRepository.findByStatus(JobStatus.RUNNING).size();
-        long failed = jobRepository.findByStatus(JobStatus.FAILED).size();
-        long completed = jobRepository.findByStatus(JobStatus.COMPLETED).size();
+        long scheduled = jobRepository.countByStatus(JobStatus.SCHEDULED);
+        long running = jobRepository.countByStatus(JobStatus.RUNNING);
+        long failed = jobRepository.countByStatus(JobStatus.FAILED);
+        long completed = jobRepository.countByStatus(JobStatus.COMPLETED);
 
         return Map.of(
                 "total", total,

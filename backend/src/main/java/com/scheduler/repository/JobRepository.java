@@ -14,6 +14,8 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     List<Job> findByStatus(JobStatus status);
 
+    long countByStatus(JobStatus status);
+
     @Modifying
     @Query("""
         UPDATE Job j SET j.status = 'RUNNING', j.lockedBy = :workerId, j.lockedAt = :now

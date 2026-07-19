@@ -27,3 +27,5 @@ scheduler:
   api:
     enabled: true
   poll-interval-ms: 5000
+  cors:
+    allowed-origins: http://localhost:3000
